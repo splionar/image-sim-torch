@@ -126,7 +126,7 @@ for epoch in range(1, n_epochs+1):
         
         it = it + 1
         
-        if it%1 == 0:
+        if it%10 == 0:
             print("Iteration: {} Loss: {}".format(it,100*loss))
             
     # print avg training statistics 
