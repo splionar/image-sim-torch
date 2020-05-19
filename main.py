@@ -12,7 +12,7 @@ train_data = datasets.ImageFolder(root = 'food_stitched_40k', transform = transf
 
 num_workers = 0
 # how many samples per batch to load
-batch_size = 128
+batch_size = 20
 
 # prepare data loaders
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers)
@@ -126,7 +126,7 @@ for epoch in range(1, n_epochs+1):
         
         it = it + 1
         
-        if it%20 == 0:
+        if it%1 == 0:
             print("Iteration: {} Loss: {}".format(it,100*loss))
             
     # print avg training statistics 
