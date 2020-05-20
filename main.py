@@ -86,6 +86,7 @@ for epoch in range(1, n_epochs+1):
         # _ stands in for labels, here
         # no need to flatten images
         images, _ = data
+        images.to('cuda')
         # clear the gradients of all optimized variables
         optimizer.zero_grad()
         # forward pass: compute predicted outputs by passing inputs to the model
