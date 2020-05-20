@@ -26,62 +26,65 @@ class ConvAutoencoder(nn.Module):
     def __init__(self):
         super(ConvAutoencoder, self).__init__()
         ## encoder layers ##
-        
-        self.encode = nn.Sequential(
-            nn.Conv2d(3, 64, 4, stride = 2, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(64, 64, 4, stride = 2, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(64, 128, 4, stride = 2, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(128, 256, 4, stride = 2, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(negative_slope=0.2),
-            nn.Conv2d(256, 512, 4, stride = 2, padding=1),
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(negative_slope=0.2)
-        )
+        # conv layer (depth from 1 --> 16), 3x3 kernels
+        self.conv1 = nn.Conv2d(3, 64, 4, stride = 2, padding=1)  
+        self.conv2 = nn.Conv2d(64, 64, 4, stride = 2, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, 4, stride = 2, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, 4, stride = 2, padding=1)
+        self.conv5 = nn.Conv2d(256, 512, 4, stride = 2, padding=1)
         
         #Bottleneck
         self.conv6 = nn.Conv2d(512, 4000, 4, stride = 1)
         self.dropout = nn.Dropout(p=0.25, inplace=False)
         
         ## decoder layers ##
-        self.decode = nn.Sequential(
-            nn.ConvTranspose2d(4000, 512, 4, stride=2),
-            nn.BatchNorm2d(512),
-            nn.ReLU(),
-            nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 64, 4, stride=2, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1),
-            nn.Sigmoid()
-        )
+        ## a kernel of 2 and a stride of 2 will increase the spatial dims by 2
+        self.t_conv0 = nn.ConvTranspose2d(4000, 512, 4, stride=2)
+        self.t_conv1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1)
+        self.t_conv2 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1)
+        self.t_conv3 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1)
+        self.t_conv4 = nn.ConvTranspose2d(64, 64, 4, stride=2, padding=1)
+        self.t_conv5 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1)
         
         # Activation
-        self.leakyRelu = nn.LeakyReLU(negative_slope=0.2)
+        self.leakyRelu = torch.nn.LeakyReLU(negative_slope=0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        #self.batchnorm = torch.nn.BatchNorm2d()
 
     def forward(self, x):
-        x = self.encode(x)
-
+        ## encode ##
+        x = self.conv1(x)
+        x = self.leakyRelu(x)
+        x = self.conv2(x)
+        x = self.leakyRelu(x)
+        x = self.conv3(x)
+        x = self.leakyRelu(x)
+        x = self.conv4(x)
+        x = self.leakyRelu(x)
+        x = self.conv5(x)
+        x = self.leakyRelu(x)
+        
+        ## botlleneck ##
         x = self.conv6(x)
         x = self.leakyRelu(x)
         x = self.dropout(x)
-
-        x = self.decode(x)
-     
+        
+        ## decode ##
+        x = self.t_conv0(x)
+        x = self.relu(x)
+        x = self.t_conv1(x)
+        x = self.relu(x)
+        x = self.t_conv2(x)
+        x = self.relu(x)
+        x = self.t_conv3(x)
+        x = self.relu(x)
+        x = self.t_conv4(x)
+        x = self.relu(x)
+        x = self.t_conv5(x)
+      
+        x = self.sigmoid(x)
+                
         return x
 
 # initialize the NN
@@ -127,7 +130,7 @@ for epoch in range(1, n_epochs+1):
             print("Iteration: {} Loss: {}".format(it,100*loss))
         
         if it%100 == 0:            
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_40k_div.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/40k_div.pt")
             
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -137,4 +140,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Backup model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_epoch_40k_div.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/40k_div_e.pt")
