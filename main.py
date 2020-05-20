@@ -27,63 +27,38 @@ class ConvAutoencoder(nn.Module):
         super(ConvAutoencoder, self).__init__()
         ## encoder layers ##
         # conv layer (depth from 1 --> 16), 3x3 kernels
-        self.conv1 = nn.Conv2d(3, 64, 4, stride = 2, padding=1)  
-        self.conv2 = nn.Conv2d(64, 64, 4, stride = 2, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, 4, stride = 2, padding=1)
-        self.conv4 = nn.Conv2d(128, 256, 4, stride = 2, padding=1)
-        self.conv5 = nn.Conv2d(256, 512, 4, stride = 2, padding=1)
-        
-        #Bottleneck
-        self.conv6 = nn.Conv2d(512, 4000, 4, stride = 1)
-        self.dropout = nn.Dropout(p=0.25, inplace=False)
+        self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
+        self.conv2 = nn.Conv2d(16, 16, 3, padding=1)
+        # conv layer (depth from 16 --> 4), 3x3 kernels
+        self.conv3 = nn.Conv2d(16, 4, 3, padding=1)
+        # pooling layer to reduce x-y dims by two; kernel and stride of 2
+        self.pool = nn.MaxPool2d(2, 2)
         
         ## decoder layers ##
         ## a kernel of 2 and a stride of 2 will increase the spatial dims by 2
-        self.t_conv0 = nn.ConvTranspose2d(4000, 512, 4, stride=2)
-        self.t_conv1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1)
-        self.t_conv2 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1)
-        self.t_conv3 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1)
-        self.t_conv4 = nn.ConvTranspose2d(64, 64, 4, stride=2, padding=1)
-        self.t_conv5 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1)
-        
-        # Activation
-        self.leakyRelu = torch.nn.LeakyReLU(negative_slope=0.2)
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
-        #self.batchnorm = torch.nn.BatchNorm2d()
+        self.t_conv1 = nn.ConvTranspose2d(4, 16, 2, stride=2)
+        self.t_conv2 = nn.ConvTranspose2d(16, 16, 2, stride=2)
+        self.t_conv3 = nn.ConvTranspose2d(16, 3, 2, stride=2)
+
 
     def forward(self, x):
         ## encode ##
-        x = self.conv1(x)
-        x = self.leakyRelu(x)
-        x = self.conv2(x)
-        x = self.leakyRelu(x)
-        x = self.conv3(x)
-        x = self.leakyRelu(x)
-        x = self.conv4(x)
-        x = self.leakyRelu(x)
-        x = self.conv5(x)
-        x = self.leakyRelu(x)
-        
-        ## botlleneck ##
-        x = self.conv6(x)
-        x = self.leakyRelu(x)
-        x = self.dropout(x)
+        # add hidden layers with relu activation function
+        # and maxpooling after
+        x = F.relu(self.conv1(x))
+        x = self.pool(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+        # add second hidden layer
+        x = F.relu(self.conv3(x))
+        x = self.pool(x)  # compressed representation
         
         ## decode ##
-        x = self.t_conv0(x)
-        x = self.relu(x)
-        x = self.t_conv1(x)
-        x = self.relu(x)
-        x = self.t_conv2(x)
-        x = self.relu(x)
-        x = self.t_conv3(x)
-        x = self.relu(x)
-        x = self.t_conv4(x)
-        x = self.relu(x)
-        x = self.t_conv5(x)
-      
-        x = self.sigmoid(x)
+        # add transpose conv layers, with relu activation function
+        x = F.relu(self.t_conv1(x))
+        x = F.relu(self.t_conv2(x))
+        # output layer (with sigmoid for scaling from 0 to 1)
+        x = F.sigmoid(self.t_conv3(x))
                 
         return x
 
