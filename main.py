@@ -105,7 +105,7 @@ for epoch in range(1, n_epochs+1):
             print("Iteration: {} Loss: {}".format(it,100*loss))
         
         if it%100 == 0:            
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/40k_div.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/40k_shallow.pt")
             
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -115,4 +115,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Backup model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/40k_div_e.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/40k_shallow_e.pt")
