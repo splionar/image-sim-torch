@@ -116,7 +116,8 @@ for epoch in range(1, n_epochs+1):
         # forward pass: compute predicted outputs by passing inputs to the model
         outputs = model(images[:,:,:,:128])
         # calculate the loss
-        loss = 0.6*criterion(outputs, images[:,:,:,128:256]) - 0.4*criterion(outputs, images[:,:,:,256:])
+        loss = 0.6*criterion(outputs, images[:,:,:,128:256])
+        #- 0.4*criterion(outputs, images[:,:,:,256:])
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
         # perform a single optimization step (parameter update)
@@ -126,7 +127,7 @@ for epoch in range(1, n_epochs+1):
         
         it = it + 1
         
-        if it%10 == 0:
+        if it%20 == 0:
             print("Iteration: {} Loss: {}".format(it,100*loss))
         
         if it%100 == 0:            
