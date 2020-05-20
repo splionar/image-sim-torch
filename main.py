@@ -12,7 +12,7 @@ train_data = datasets.ImageFolder(root = 'food_stitched_40k', transform = transf
 
 num_workers = 0
 # how many samples per batch to load
-batch_size = 20
+batch_size = 40
 
 # prepare data loaders
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers)
@@ -116,8 +116,7 @@ for epoch in range(1, n_epochs+1):
         # forward pass: compute predicted outputs by passing inputs to the model
         outputs = model(images[:,:,:,:128])
         # calculate the loss
-        loss = 0.6*criterion(outputs, images[:,:,:,128:256])
-        #- 0.4*criterion(outputs, images[:,:,:,256:])
+        loss = 0.6*criterion(outputs, images[:,:,:,128:256]) / 0.4*criterion(outputs, images[:,:,:,256:])
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
         # perform a single optimization step (parameter update)
@@ -131,7 +130,7 @@ for epoch in range(1, n_epochs+1):
             print("Iteration: {} Loss: {}".format(it,100*loss))
         
         if it%100 == 0:            
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_40k_sim.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_40k_div.pt")
             
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -141,4 +140,4 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Backup model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_epoch_40k_sim.pt")
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/weights_epoch_40k_div.pt")
