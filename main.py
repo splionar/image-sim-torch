@@ -4,7 +4,11 @@ from torchvision import datasets
 import torchvision.transforms as transforms
 
 # convert data to torch.FloatTensor
-transform = transforms.ToTensor()
+#transform = transforms.ToTensor()
+transform = transforms.Compose([
+  transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.05),
+  transforms.ToTensor(),
+])
 
 train_data = datasets.ImageFolder(root = 'food_stitched_40k', transform = transform)
 
@@ -77,30 +81,30 @@ class TripletAlexNet(nn.Module):
     def __init__(self):
         super(TripletAlexNet, self).__init__()
 
-        div = 2
+        div = 4
 
         self.features = nn.Sequential(
-            nn.Conv2d(3, int(64/div), kernel_size=11, stride=4, padding=2),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(int(64/div), int(192/div), kernel_size=5, padding=2),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(3, int(64/div), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(64/div), int(192/div), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
             nn.Conv2d(int(192/div), int(384/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
             nn.Conv2d(int(384/div), int(256/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
             nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.ReLU(),
         )
-        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(int(256/div) * 6 * 6, 4096),
-            nn.PReLU(),
-            nn.Dropout(),
-            nn.Linear(4096, 4096)
+            #nn.Dropout(),
+            nn.Linear(int(256/div) * 8 * 8, int(4096/div*2))
+            #nn.ReLU(),
+            #nn.Dropout(),
+            #nn.Linear(int(4096/div*2), int(4096/div*2))
             #nn.ReLU(inplace=True),
             #nn.Linear(4096, num_classes),
         )
@@ -160,7 +164,7 @@ for epoch in range(1, n_epochs+1):
         # loss
         l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
-        loss = torch.mean(F.relu(l2_plus - l2_min + 1.6))
+        loss = torch.mean(F.relu(l2_plus - l2_min + 0.8))
 
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
@@ -176,7 +180,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/shallow16.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/shallowDA.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -186,5 +190,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/shallow16_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/shallowDA_epoch{}.pt".format(ep))
     ep = ep + 1
