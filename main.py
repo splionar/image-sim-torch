@@ -137,9 +137,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 # number of epochs to train the model
 n_epochs = 10000
-
+ep = 1
 for epoch in range(1, n_epochs+1):
-    ep = 1
+    
     # monitor training loss
         
     ###################
