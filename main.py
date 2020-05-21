@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 #transform = transforms.ToTensor()
 transform = transforms.Compose([
   transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.05),
+  transforms.RandomVerticalFlip(p=0.3),
   transforms.ToTensor(),
 ])
 
