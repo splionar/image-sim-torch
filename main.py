@@ -164,7 +164,7 @@ for epoch in range(1, n_epochs+1):
         # loss
         l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
-        loss = torch.mean(F.relu(l2_plus - l2_min + 0.5))
+        loss = torch.mean(F.relu(l2_plus - l2_min + 0.8))
 
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
