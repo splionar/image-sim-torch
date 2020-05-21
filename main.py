@@ -73,12 +73,67 @@ class TripletNetwork(nn.Module):
 
         return l, m, r
 
+class TripletAlexNet(nn.Module):
+    def __init__(self):
+        super(TripletAlexNet, self).__init__()
+
+        div = 2
+
+        self.features = nn.Sequential(
+            nn.Conv2d(3, int(64/div), kernel_size=11, stride=4, padding=2),
+            nn.PReLU(),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(int(64/div), int(192/div), kernel_size=5, padding=2),
+            nn.PReLU(),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(int(192/div), int(384/div), kernel_size=3, padding=1),
+            nn.PReLU(),
+            nn.Conv2d(int(384/div), int(256/div), kernel_size=3, padding=1),
+            nn.PReLU(),
+            nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
+            nn.PReLU(),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+        )
+        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.fcn = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(int(256/div) * 6 * 6, 4096),
+            nn.PReLU(),
+            nn.Dropout(),
+            nn.Linear(4096, 4096)
+            #nn.ReLU(inplace=True),
+            #nn.Linear(4096, num_classes),
+        )
+
+    def forward(self, x):
+        l = x[:,:,:,:128]
+        m = x[:,:,:,128:256]
+        r = x[:,:,:,256:]
+        
+        l = self.features(l)
+        l = self.avgpool(l)
+        l = torch.flatten(l, 1)
+        l = self.fcn(l)
+        
+        m = self.features(m)
+        m = self.avgpool(m)
+        m = torch.flatten(m, 1)
+        m = self.fcn(m)
+        
+        r = self.features(r)
+        r = self.avgpool(r)
+        r = torch.flatten(r, 1)
+        r = self.fcn(r)
+        
+        return l, m, r
+
 # Initialize model    
-model = TripletNetwork()
+#model = TripletNetwork()
+model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
 
 # number of epochs to train the model
 n_epochs = 10000
@@ -104,7 +159,7 @@ for epoch in range(1, n_epochs+1):
         # loss
         l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
-        loss = torch.mean(F.relu(l2_plus - l2_min + 0.2))
+        loss = torch.mean(F.relu(l2_plus - l2_min + 0.25))
 
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
