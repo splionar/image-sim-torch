@@ -132,12 +132,12 @@ class TripletAlexNet(nn.Module):
         return l, m, r
 
 # Initialize model    
-model = TripletNetwork()
-#model = TripletAlexNet()
+#model = TripletNetwork()
+model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
 
 # number of epochs to train the model
 n_epochs = 10000
@@ -164,7 +164,7 @@ for epoch in range(1, n_epochs+1):
         # loss
         l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
-        loss = torch.mean(F.relu(l2_plus - l2_min + 0.8))
+        loss = torch.mean(F.relu(l2_plus - l2_min + 0.5))
 
         # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
@@ -180,7 +180,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/shallowDA.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnetDA.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -190,5 +190,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/shallowDA_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/alexnetDA_epoch{}.pt".format(ep))
     ep = ep + 1
