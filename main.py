@@ -133,7 +133,7 @@ model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.005)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.0025)
 
 # number of epochs to train the model
 n_epochs = 10000
