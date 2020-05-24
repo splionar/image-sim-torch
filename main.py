@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 # convert data to torch.FloatTensor
 transform = transforms.ToTensor()
 
-train_data = datasets.ImageFolder(root = 'food_stitched_55k', transform = transform)
+train_data = datasets.ImageFolder(root = 'food_stitched_semisupervised', transform = transform)
 
 # Create training and test dataloaders
 
@@ -97,10 +97,10 @@ class TripletAlexNet(nn.Module):
         self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
             nn.Dropout(p=0.4),
-            nn.Linear(int(256/div) * 8 * 8, int(4096/8)),
-            nn.ReLU(),
-            nn.Dropout(p = 0.4),
-            nn.Linear(int(4096/8), int(4096/8))
+            nn.Linear(int(256/div) * 8 * 8, int(4096/2)),
+            #nn.ReLU(),
+            #nn.Dropout(p = 0.4),
+            #nn.Linear(int(4096/8), int(4096/8))
             #nn.ReLU(inplace=True),
             #nn.Linear(4096, num_classes),
         )
@@ -133,7 +133,7 @@ model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.0012)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
 
 # number of epochs to train the model
 n_epochs = 10000
@@ -158,7 +158,7 @@ for epoch in range(1, n_epochs+1):
         l, m, r = model(images)
 
         # loss
-        triplet_loss = nn.TripletMarginLoss(margin=0.8, p=2)
+        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
         loss = triplet_loss(l,m,r)
         #l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         #l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
@@ -178,7 +178,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/anetfc8_reg0012.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/anet_ss.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -188,5 +188,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/anetfc8_reg0012_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/anet_ss_epoch{}.pt".format(ep))
     ep = ep + 1
