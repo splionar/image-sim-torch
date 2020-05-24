@@ -158,7 +158,7 @@ for epoch in range(1, n_epochs+1):
         l, m, r = model(images)
 
         # loss
-        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
+        triplet_loss = nn.TripletMarginLoss(margin=0.8, p=2)
         loss = triplet_loss(l,m,r)
         #l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         #l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
