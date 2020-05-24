@@ -77,30 +77,30 @@ class TripletAlexNet(nn.Module):
     def __init__(self):
         super(TripletAlexNet, self).__init__()
 
-        div = 2
+        div = 4
 
         self.features = nn.Sequential(
-            nn.Conv2d(3, int(64/div), kernel_size=11, stride=4, padding=2),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(int(64/div), int(192/div), kernel_size=5, padding=2),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(3, int(64/div), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(64/div), int(192/div), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
             nn.Conv2d(int(192/div), int(384/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
             nn.Conv2d(int(384/div), int(256/div), kernel_size=3, padding=1),
-            nn.PReLU(),
+            nn.ReLU(),
             nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
-            nn.PReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.ReLU(),
         )
-        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(int(256/div) * 6 * 6, 4096),
-            nn.PReLU(),
-            nn.Dropout(),
-            nn.Linear(4096, 4096)
+            nn.Dropout(p=0.4),
+            nn.Linear(int(256/div) * 8 * 8, int(4096/div*2))
+            #nn.ReLU(),
+            #nn.Dropout(),
+            #nn.Linear(int(4096/div*2), int(4096/div*2))
             #nn.ReLU(inplace=True),
             #nn.Linear(4096, num_classes),
         )
@@ -128,12 +128,12 @@ class TripletAlexNet(nn.Module):
         return l, m, r
 
 # Initialize model    
-model = TripletNetwork()
-#model = TripletAlexNet()
+#model = TripletNetwork()
+model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
 
 # number of epochs to train the model
 n_epochs = 10000
@@ -176,7 +176,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/resizeonly.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/anet_reg001.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -186,5 +186,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/resizeonly_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/anet_reg001_epoch{}.pt".format(ep))
     ep = ep + 1
