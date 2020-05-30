@@ -98,12 +98,46 @@ class TripletAlexNet(nn.Module):
         self.fcn = nn.Sequential(
             nn.Dropout(p=0.4),
             nn.Linear(int(256/div) * 8 * 8, int(4096/2)),
-            #nn.ReLU(),
-            #nn.Dropout(p = 0.4),
-            #nn.Linear(int(4096/8), int(4096/8))
-            #nn.ReLU(inplace=True),
-            #nn.Linear(4096, num_classes),
         )
+        
+        #Multi-scale
+        hdim = 16
+        bdim = 16
+        
+        #2:1 subsample
+        self.subsample1_cnn = nn.Sequential(
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(3, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(hdim, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hdim, bdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(bdim, 3, 3, padding=1)    
+            )
+         
+        self.subsample1_fcn = nn.Sequential(
+            nn.Dropout(p=0.4),
+            nn.Linear(3072, int(4096/div*2))
+                )
+        #4:1 subsample
+        self.subsample2_cnn = nn.Sequential(
+            nn.MaxPool2d((2,2)),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(3, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hdim, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hdim, bdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(bdim, 3, 3, padding=1)    
+            )        
+
+        self.subsample2_fcn = nn.Sequential(
+            nn.Dropout(p=0.4),
+            nn.Linear(3072, int(4096/div*2))
+                )
 
     def forward(self, x):
         l = x[:,:,:,:128]
@@ -121,22 +155,53 @@ class TripletAlexNet(nn.Module):
         r[r>1.0] = 1.0
         r[r<0.0] = 0.0
         
-        l = self.features(l)
-        l = self.avgpool(l)
-        l = torch.flatten(l, 1)
-        l = self.fcn(l)
+        # Alex-net
+        L = self.features(l)
+        L = self.avgpool(L)
+        L = torch.flatten(L, 1)
+        L = self.fcn(L)
         
-        m = self.features(m)
-        m = self.avgpool(m)
-        m = torch.flatten(m, 1)
-        m = self.fcn(m)
+        M = self.features(m)
+        M = self.avgpool(M)
+        M = torch.flatten(M, 1)
+        M = self.fcn(M)
         
-        r = self.features(r)
-        r = self.avgpool(r)
-        r = torch.flatten(r, 1)
-        r = self.fcn(r)
+        R = self.features(r)
+        R = self.avgpool(R)
+        R = torch.flatten(R, 1)
+        R = self.fcn(R)
         
-        return l, m, r
+        # Subsample 1 2:1 + shallow CNN
+        L_sub1 = self.subsample1_cnn(l) 
+        L_sub1 = torch.flatten(L_sub1, 1)
+        L_sub1 = self.subsample1_fcn(L_sub1)
+        
+        M_sub1 = self.subsample1_cnn(m) 
+        M_sub1 = torch.flatten(M_sub1, 1)
+        M_sub1 = self.subsample1_fcn(M_sub1)
+        
+        R_sub1 = self.subsample1_cnn(r) 
+        R_sub1 = torch.flatten(R_sub1, 1)
+        R_sub1 = self.subsample1_fcn(R_sub1)
+        
+        # Subsample 2 4:1 + shallow CNN
+        L_sub2 = self.subsample2_cnn(l) 
+        L_sub2 = torch.flatten(L_sub2, 1)
+        L_sub2 = self.subsample2_fcn(L_sub2)
+        
+        M_sub2 = self.subsample2_cnn(m) 
+        M_sub2 = torch.flatten(M_sub2, 1)
+        M_sub2 = self.subsample2_fcn(M_sub2)
+        
+        R_sub2 = self.subsample2_cnn(r) 
+        R_sub2 = torch.flatten(R_sub2, 1)
+        R_sub2 = self.subsample2_fcn(R_sub2)
+        
+        L = L + L_sub1 + L_sub2
+        M = M + M_sub1 + M_sub2
+        R = R + R_sub1 + R_sub2
+        
+        return L, M, R
 
 # Initialize model    
 model = TripletNetwork()
