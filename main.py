@@ -204,8 +204,8 @@ class TripletAlexNet(nn.Module):
         return L, M, R
 
 # Initialize model    
-model = TripletNetwork()
-#model = TripletAlexNet()
+#model = TripletNetwork()
+model = TripletAlexNet()
 model.cuda()
 
 # specify loss function
