@@ -10,7 +10,7 @@ transform = transforms.Compose([
 
 #transform = transforms.ToTensor()
 
-train_data = datasets.ImageFolder(root = 'food_stitched_semisupervised', transform = transform)
+train_data = datasets.ImageFolder(root = 'food_stitched_55k', transform = transform)
 
 # Create training and test dataloaders
 
