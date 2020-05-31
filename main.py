@@ -109,19 +109,19 @@ class TripletAlexNet(nn.Module):
 
     def forward(self, x):
         l = x[:,:,:,:128]
-        l = l + ((torch.ones(l.size()))*(torch.rand((1))-0.5)*0.2).to('cuda')
+        l = l + ((torch.ones(l.size()))*(torch.rand((1))-0.5)*0.3).to('cuda')
         l[l>1.0] = 1.0
-        l[l<0.0] = 0.0
+        l[l<-1.0] = -1.0
         
         m = x[:,:,:,128:256]
-        m = m + ((torch.ones(m.size()))*(torch.rand((1))-0.5)*0.2).to('cuda')
+        m = m + ((torch.ones(m.size()))*(torch.rand((1))-0.5)*0.3).to('cuda')
         m[m>1.0] = 1.0
-        m[m<0.0] = 0.0
+        m[m<-1.0] = -1.0
         
         r = x[:,:,:,256:]
-        r = r + ((torch.ones(r.size()))*(torch.rand((1))-0.5)*0.2).to('cuda')
+        r = r + ((torch.ones(r.size()))*(torch.rand((1))-0.5)*0.3).to('cuda')
         r[r>1.0] = 1.0
-        r[r<0.0] = 0.0
+        r[r<-1.0] = -1.0
         
         # Alex-net
         L = self.features(l)
