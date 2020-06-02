@@ -195,7 +195,7 @@ for epoch in range(1, n_epochs+1):
         it = it + 1
         
         if it%200 == 0:
-            print("Iteration: {} Loss: {}".format(it,100*loss))
+            print("Iteration: {} Loss: {}".format(it,loss))
 
         if it%1000 == 0:
             #print('Saving model')
