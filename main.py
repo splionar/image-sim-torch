@@ -101,9 +101,10 @@ class TripletAlexNet(nn.Module):
 
     def forward(self, x):
         preprocess = transforms.Compose([
+                    transforms.ToPILImage(mode=None),
                     transforms.RandomCrop(128),
                     transforms.RandomHorizontalFlip(p=0.5),
-                    #transforms.ToTensor(),
+                    transforms.ToTensor(),
                 ])
         
         l = x[:,:,:,:128]
