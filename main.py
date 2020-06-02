@@ -4,13 +4,9 @@ from torchvision import datasets
 import torchvision.transforms as transforms
 
 # convert data to torch.FloatTensor
-transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
 #transform = transforms.ToTensor()
 
-train_data = datasets.ImageFolder(root = 'food_stitched_55k', transform = transform)
+train_data = datasets.ImageFolder(root = 'food_stitched_55k')
 
 # Create training and test dataloaders
 
@@ -19,8 +15,7 @@ num_workers = 0
 batch_size = 20
 
 # prepare data loaders
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers, shuffle = True)
-#test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, num_workers=num_workers)
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers)
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -81,63 +76,58 @@ class TripletAlexNet(nn.Module):
     def __init__(self):
         super(TripletAlexNet, self).__init__()
 
+        div = 4
+
         self.features = nn.Sequential(
-            nn.Conv2d(3, 96, kernel_size=11, stride=2), #60 / 59(?)
+            nn.Conv2d(3, int(64/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 4, stride = 1), #57
-            nn.BatchNorm2d(96),
-            nn.Conv2d(96, 96, kernel_size=5, stride = 2), # 27
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(64/div), int(192/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 3, stride = 2, padding = 1), # 14
-            nn.BatchNorm2d(96),
-            nn.Conv2d(96, 96, kernel_size=3, padding=1),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(192/div), int(384/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(96, 96, kernel_size=3, padding=1),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(384/div), int(256/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(96, 96, kernel_size=3, padding=1),
+            nn.Conv2d(int(256/div), int(256/div), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2),
         )
+        self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
             nn.Dropout(p=0.4),
-            nn.Linear(96*6*6, 4096),
-            nn.ReLU(),
-            nn.Dropout(p=0.4),
-            nn.Linear(4096, 4096)
+            nn.Linear(int(256/div) * 8 * 8, int(4096/2)),
         )
-        
 
     def forward(self, x):
+        preprocess = transforms.Compose([
+                    transforms.RandomCrop(128),
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.ToTensor(),
+                ])
+        
         l = x[:,:,:,:128]
-        l = l + ((torch.ones(l.size()))*(torch.rand((1))-0.5)*0.3).to('cuda')
-        l[l>1.0] = 1.0
-        l[l<-1.0] = -1.0
-        
+        l = preprocess(l)      
         m = x[:,:,:,128:256]
-        m = m + ((torch.ones(m.size()))*(torch.rand((1))-0.5)*0.3).to('cuda')
-        m[m>1.0] = 1.0
-        m[m<-1.0] = -1.0
-        
+        m = preprocess(m)        
         r = x[:,:,:,256:]
-        r = r + ((torch.ones(r.size()))*(torch.rand((1))-0.5)*0.3).to('cuda')
-        r[r>1.0] = 1.0
-        r[r<-1.0] = -1.0
-        
+        r = preprocess(r)
+
         # Alex-net
         L = self.features(l)
+        L = self.avgpool(L)
         L = torch.flatten(L, 1)
         L = self.fcn(L)
-        L = F.normalize(L,dim=1,p=2)
         
         M = self.features(m)
+        M = self.avgpool(M)
         M = torch.flatten(M, 1)
         M = self.fcn(M)
-        M = F.normalize(M,dim=1,p=2)
         
         R = self.features(r)
+        R = self.avgpool(R)
         R = torch.flatten(R, 1)
         R = self.fcn(R)
-        R = F.normalize(R,dim=1,p=2)
         
         return L, M, R
 
@@ -166,15 +156,23 @@ for epoch in range(1, n_epochs+1):
         # no need to flatten images
         images, _ = data
         images = images.to('cuda')
+        # clear the gradients of all optimized variables
         optimizer.zero_grad()
+        # forward pass: compute predicted outputs by passing inputs to the model
         l, m, r = model(images)
 
         # loss
         triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
         loss = triplet_loss(l,m,r)
+        #l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
+        #l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
+        #loss = torch.mean(F.relu(l2_plus - l2_min + 0.8))
 
+        # backward pass: compute gradient of the loss with respect to model parameters
         loss.backward()
+        # perform a single optimization step (parameter update)
         optimizer.step()
+        # update running training loss
         train_loss += loss.item()*images.size(0)
         
         it = it + 1
@@ -184,15 +182,15 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_alexnet_paper/anpaper_ss.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet_rand/anet_rand.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
     print('Epoch: {} \tTraining Loss: {:.6f}'.format(
         epoch, 
-        100*train_loss
+        train_loss
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_alexnet_paper/anpaper_ss_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet_rand/anet_rand_epoch{}.pt".format(ep))
     ep = ep + 1
