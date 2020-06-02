@@ -155,34 +155,38 @@ class TripletAlexNet2(nn.Module):
         div = 4
 
         self.features = nn.Sequential(
-            nn.Conv2d(3, int(64), kernel_size=3, padding=1),
+            nn.Conv2d(3, int(16), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(16, int(16), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(16, int(16), kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d((2,2)),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.Conv2d(int(32), int(32), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.Conv2d(int(32), int(32), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d((2,2)),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.Conv2d(int(32), int(32), kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d((2,2)),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.Conv2d(int(64), int(64), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.Conv2d(int(64), int(64), kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.Conv2d(int(64), int(64), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(128), int(128), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(128), int(128), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(128), int(128), kernel_size=3, padding=1),
             nn.ReLU(),
         )
         self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
             nn.Dropout(p=0.4),
-            nn.Linear(int(96) * 8 * 8, int(4096/2)),
+            nn.Linear(int(128) * 8 * 8, int(4096/2)),
         )
         
         #Multi-scale
