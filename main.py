@@ -148,9 +148,165 @@ class TripletAlexNet(nn.Module):
         
         return L, M, R
 
+class TripletAlexNet2(nn.Module):
+    def __init__(self):
+        super(TripletAlexNet2, self).__init__()
+
+        div = 4
+
+        self.features = nn.Sequential(
+            nn.Conv2d(3, int(64), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(int(96), int(96), kernel_size=3, padding=1),
+            nn.ReLU(),
+        )
+        self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
+        self.fcn = nn.Sequential(
+            nn.Dropout(p=0.4),
+            nn.Linear(int(96) * 8 * 8, int(4096/2)),
+        )
+        
+        #Multi-scale
+        hdim = 16
+        bdim = 16
+        
+        #2:1 subsample
+        self.subsample1_cnn = nn.Sequential(
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(3, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(hdim, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hdim, bdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(bdim, 3, 3, padding=1)    
+            )
+         
+        self.subsample1_fcn = nn.Sequential(
+            nn.Dropout(p=0.4),
+            nn.Linear(3072, int(4096/div*2))
+                )
+        #4:1 subsample
+        self.subsample2_cnn = nn.Sequential(
+            nn.MaxPool2d((2,2)),
+            nn.MaxPool2d((2,2)),
+            nn.Conv2d(3, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hdim, hdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(hdim, bdim, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(bdim, 3, 3, padding=1)    
+            )        
+
+        self.subsample2_fcn = nn.Sequential(
+            nn.Dropout(p=0.4),
+            nn.Linear(3072, int(4096/div*2))
+                )
+
+    def forward(self, x):
+        
+        def crop_horizontal_flip(im):
+
+            im = im.cpu().numpy().copy()
+            crop_size = 128
+            start_j = random.randint(0,150-1-crop_size)
+            start_i = random.randint(0,150-1-crop_size)
+            end_j = start_j + crop_size
+            end_i = start_i + crop_size
+            im = im[:,:, start_j:end_j, start_i:end_i].copy()
+
+            a = random.random()
+
+            if a < 0.5:
+                #im = im.cpu().numpy()[:,:, :, ::-1].copy()
+                im = im[:,:, :, ::-1].copy()
+            
+            im = torch.from_numpy(im).to('cuda')    
+
+            return im
+
+        l = x[:,:,:,:150]
+        m = x[:,:,:,150:300]
+        r = x[:,:,:,300:]        
+
+        l = crop_horizontal_flip(l)
+        m = crop_horizontal_flip(m)
+        r = crop_horizontal_flip(r)
+        
+        # Alex-net
+        L = self.features(l)
+        L = self.avgpool(L)
+        L = torch.flatten(L, 1)
+        L = self.fcn(L)
+        
+        M = self.features(m)
+        M = self.avgpool(M)
+        M = torch.flatten(M, 1)
+        M = self.fcn(M)
+        
+        R = self.features(r)
+        R = self.avgpool(R)
+        R = torch.flatten(R, 1)
+        R = self.fcn(R)
+        
+        # Subsample 1 2:1 + shallow CNN
+        L_sub1 = self.subsample1_cnn(l) 
+        L_sub1 = torch.flatten(L_sub1, 1)
+        L_sub1 = self.subsample1_fcn(L_sub1)
+        
+        M_sub1 = self.subsample1_cnn(m) 
+        M_sub1 = torch.flatten(M_sub1, 1)
+        M_sub1 = self.subsample1_fcn(M_sub1)
+        
+        R_sub1 = self.subsample1_cnn(r) 
+        R_sub1 = torch.flatten(R_sub1, 1)
+        R_sub1 = self.subsample1_fcn(R_sub1)
+        
+        # Subsample 2 4:1 + shallow CNN
+        L_sub2 = self.subsample2_cnn(l) 
+        L_sub2 = torch.flatten(L_sub2, 1)
+        L_sub2 = self.subsample2_fcn(L_sub2)
+        
+        M_sub2 = self.subsample2_cnn(m) 
+        M_sub2 = torch.flatten(M_sub2, 1)
+        M_sub2 = self.subsample2_fcn(M_sub2)
+        
+        R_sub2 = self.subsample2_cnn(r) 
+        R_sub2 = torch.flatten(R_sub2, 1)
+        R_sub2 = self.subsample2_fcn(R_sub2)
+        
+        L = L + L_sub1 + L_sub2
+        M = M + M_sub1 + M_sub2
+        R = R + R_sub1 + R_sub2
+        
+        return L, M, R    
+    
 # Initialize model    
 #model = TripletNetwork()
-model = TripletAlexNet()
+#model = TripletAlexNet()
+model = TripletAlexNet2()
+
 model.cuda()
 
 # specify loss function
@@ -179,7 +335,7 @@ for epoch in range(1, n_epochs+1):
         l, m, r = model(images)
 
         # loss
-        triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
+        triplet_loss = nn.TripletMarginLoss(margin=0.75, p=2)
         loss = triplet_loss(l,m,r)
         #l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         #l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
@@ -199,7 +355,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet_rand_reg05/anet_rand_reg05.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet2_rand_reg05/anet2_rand_reg05.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -209,5 +365,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet_rand_reg05/anet_rand_reg05_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet2_rand_reg05/anet2_rand_reg05_epoch{}.pt".format(ep))
     ep = ep + 1
