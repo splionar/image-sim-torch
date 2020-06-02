@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from torchvision import datasets
 import torchvision.transforms as transforms
+import random
 
 # convert data to torch.FloatTensor
 transform = transforms.ToTensor()
@@ -100,19 +101,34 @@ class TripletAlexNet(nn.Module):
         )
 
     def forward(self, x):
-        preprocess = transforms.Compose([
-                    transforms.ToPILImage(mode=None),
-                    transforms.RandomCrop(128),
-                    transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor(),
-                ])
-        
-        l = x[:,:,:,:128]
-        l = preprocess(l)      
-        m = x[:,:,:,128:256]
-        m = preprocess(m)        
-        r = x[:,:,:,256:]
-        r = preprocess(r)
+
+        def crop_horizontal_flip(im):
+
+            im = im.cpu().numpy().copy()
+            crop_size = 128
+            start_j = random.randint(0,150-1-crop_size)
+            start_i = random.randint(0,150-1-crop_size)
+            end_j = start_j + crop_size
+            end_i = start_i + crop_size
+            im = im[:,:, start_j:end_j, start_i:end_i].copy()
+
+            a = random.random()
+
+            if a < 0.5:
+                #im = im.cpu().numpy()[:,:, :, ::-1].copy()
+                im = im[:,:, :, ::-1].copy()
+            
+            im = torch.from_numpy(im).to('cuda')    
+
+            return im
+
+        l = x[:,:,:,:150]
+        m = x[:,:,:,150:300]
+        r = x[:,:,:,300:]        
+
+        l = crop_horizontal_flip(l)
+        m = crop_horizontal_flip(m)
+        r = crop_horizontal_flip(r)
 
         # Alex-net
         L = self.features(l)
