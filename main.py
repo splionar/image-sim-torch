@@ -4,9 +4,9 @@ from torchvision import datasets
 import torchvision.transforms as transforms
 
 # convert data to torch.FloatTensor
-#transform = transforms.ToTensor()
+transform = transforms.ToTensor()
 
-train_data = datasets.ImageFolder(root = 'food_stitched_55k')
+train_data = datasets.ImageFolder(root = 'food_stitched_55k', transform = transform)
 
 # Create training and test dataloaders
 
@@ -103,7 +103,7 @@ class TripletAlexNet(nn.Module):
         preprocess = transforms.Compose([
                     transforms.RandomCrop(128),
                     transforms.RandomHorizontalFlip(p=0.5),
-                    transforms.ToTensor(),
+                    #transforms.ToTensor(),
                 ])
         
         l = x[:,:,:,:128]
