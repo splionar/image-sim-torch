@@ -359,7 +359,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet2_rand_reg05/anet2_rand_reg05.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet_rand_reg00/anet_rand_reg00.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -369,5 +369,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet2_rand_reg05/anet2_rand_reg05_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_anet_rand_reg00/anet_rand_reg00_epoch{}.pt".format(ep))
     ep = ep + 1
