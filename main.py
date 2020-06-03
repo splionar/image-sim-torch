@@ -101,7 +101,7 @@ class TripletAlexNet(nn.Module):
         )
 
     def forward(self, x):
-    '''
+        '''
         def crop_horizontal_flip(im):
 
             im = im.cpu().numpy().copy()
