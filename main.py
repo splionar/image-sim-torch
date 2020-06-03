@@ -101,7 +101,7 @@ class TripletAlexNet(nn.Module):
         )
 
     def forward(self, x):
-
+    '''
         def crop_horizontal_flip(im):
 
             im = im.cpu().numpy().copy()
@@ -129,7 +129,11 @@ class TripletAlexNet(nn.Module):
         l = crop_horizontal_flip(l)
         m = crop_horizontal_flip(m)
         r = crop_horizontal_flip(r)
-
+        '''
+        l = x[:,:,:,:128]
+        m = x[:,:,:,128:256]
+        r = x[:,:,:,256:]
+        
         # Alex-net
         L = self.features(l)
         L = self.avgpool(L)
@@ -359,7 +363,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_alexnet_rand_reg00/alexnet_rand_reg00.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_test/test.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -369,5 +373,5 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_alexnet_rand_reg00/alexnet_rand_reg00_epoch{}.pt".format(ep))
+    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_test/test_epoch{}.pt".format(ep))
     ep = ep + 1
