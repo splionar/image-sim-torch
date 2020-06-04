@@ -76,6 +76,7 @@ class Unet(nn.Module):
     def __init__(self, d_dim):
         super().__init__()
         # Submodules
+        self.convL0 = nn.Conv2d(3, d_dim, kernel_size=3, padding=1)
         self.DoubleConv2dL0 = DoubleConv_LeftU(d_dim, d_dim)
         self.Down1 = DownSampling_DoubleConv(d_dim, d_dim * 2)
         self.Down2 = DownSampling_DoubleConv(d_dim * 2, d_dim * 4)
@@ -89,9 +90,11 @@ class Unet(nn.Module):
         self.DoubleConv2dR1 = DoubleConv_RightU(d_dim * 4, d_dim * 2)
         self.Up1 = nn.ConvTranspose2d(d_dim * 2, d_dim, kernel_size=2, stride=2)
         self.DoubleConv2dR0 = DoubleConv_RightU(d_dim * 2, d_dim)
+        self.convR0 = nn.Conv2d(d_dim, 3, kernel_size=3, padding=1)
 
     def forward(self, x):
-        net0 = self.DoubleConv2dL0(x)
+        net0 = self.convL0(x)
+        net0 = self.DoubleConv2dL0(net0)
         net1 = self.Down1(net0)
         net2 = self.Down2(net1)
         net3 = self.Down3(net2)
@@ -112,5 +115,6 @@ class Unet(nn.Module):
         net = self.Up1(net)
         net = torch.cat([net0, net], dim=1)
         net = self.DoubleConv2dR0(net)
+        net = self.convR0(net)
 
         return net
