@@ -59,15 +59,15 @@ class UNet(nn.Module):
         m = crop_horizontal_flip(m)
         r = crop_horizontal_flip(r)
                 
-        # Alex-net
+        # U-net
         L = self.unet(l)
-        L = torch.flatten(L, 1)
+        #L = torch.flatten(L, 1)
         
         M = self.unet(m)
-        M = torch.flatten(M, 1)
+        #M = torch.flatten(M, 1)
         
         R = self.unet(r)
-        R = torch.flatten(R, 1)
+        #R = torch.flatten(R, 1)
         
         return L, M, R
 
@@ -362,8 +362,9 @@ class TripletAlexNet2(nn.Module):
     
 # Initialize model    
 #model = TripletNetwork()
-model = TripletAlexNet()
+#model = TripletAlexNet()
 #model = TripletAlexNet2()
+model = UNet()
 
 model.cuda()
 
@@ -393,7 +394,7 @@ for epoch in range(1, n_epochs+1):
         l, m, r = model(images)
 
         # loss
-        triplet_loss = nn.TripletMarginLoss(margin=0.2, p=2)
+        triplet_loss = nn.TripletMarginLoss(margin=0.8, p=2)
         loss = triplet_loss(l,m,r)
         #l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         #l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
@@ -413,7 +414,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_test/test.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_unet/unet.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -423,5 +424,8 @@ for epoch in range(1, n_epochs+1):
         ))
     
     print('Saving model')
-    torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_test/test_epoch{}.pt".format(ep))
+    
+    if ep%5 == 0:
+        torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_unet/unet_epoch{}.pt".format(ep))
+    
     ep = ep + 1
