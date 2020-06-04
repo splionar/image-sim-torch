@@ -96,7 +96,7 @@ class TripletAlexNet(nn.Module):
         )
         self.avgpool = nn.AdaptiveMaxPool2d((8, 8))
         self.fcn = nn.Sequential(
-            nn.Dropout(p=0.4),
+            #nn.Dropout(p=0.4),
             nn.Linear(int(256/div) * 8 * 8, int(4096/2)),
         )
 
