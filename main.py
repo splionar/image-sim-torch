@@ -3,6 +3,7 @@ import numpy as np
 from torchvision import datasets
 import torchvision.transforms as transforms
 import random
+from layers import Unet
 
 # convert data to torch.FloatTensor
 transform = transforms.ToTensor()
@@ -20,6 +21,55 @@ train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, nu
 
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+
+        self.unet = Unet(32)
+
+    def forward(self, x):
+        
+        def crop_horizontal_flip(im):
+
+            im = im.cpu().numpy().copy()
+            crop_size = 128
+            start_j = random.randint(0,150-1-crop_size)
+            start_i = random.randint(0,150-1-crop_size)
+            end_j = start_j + crop_size
+            end_i = start_i + crop_size
+            im = im[:,:, start_j:end_j, start_i:end_i].copy()
+
+            a = random.random()
+
+            if a < 0.5:
+                #im = im.cpu().numpy()[:,:, :, ::-1].copy()
+                im = im[:,:, :, ::-1].copy()
+            
+            im = torch.from_numpy(im).to('cuda')    
+
+            return im
+
+        l = x[:,:,:,:150]
+        m = x[:,:,:,150:300]
+        r = x[:,:,:,300:]        
+
+        l = crop_horizontal_flip(l)
+        m = crop_horizontal_flip(m)
+        r = crop_horizontal_flip(r)
+                
+        # Alex-net
+        L = self.unet(l)
+        L = torch.flatten(L, 1)
+        
+        M = self.unet(m)
+        M = torch.flatten(M, 1)
+        
+        R = self.unet(r)
+        R = torch.flatten(R, 1)
+        
+        return L, M, R
 
 # define the NN architecture
 class TripletNetwork(nn.Module):
