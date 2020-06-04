@@ -91,9 +91,11 @@ class Unet(nn.Module):
         self.Up1 = nn.ConvTranspose2d(d_dim * 2, d_dim, kernel_size=2, stride=2)
         self.DoubleConv2dR0 = DoubleConv_RightU(d_dim * 2, d_dim)
         self.convR0 = nn.Conv2d(d_dim, 3, kernel_size=3, padding=1)
+        
+        self.actvn = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        net0 = self.convL0(x)
+        net0 = self.actvn(self.convL0(x))
         net0 = self.DoubleConv2dL0(net0)
         net1 = self.Down1(net0)
         net2 = self.Down2(net1)
