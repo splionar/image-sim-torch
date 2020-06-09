@@ -404,7 +404,7 @@ model.cuda()
 
 # specify loss function
 #optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.99)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.99)
 
 
 # number of epochs to train the model
