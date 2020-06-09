@@ -14,7 +14,7 @@ train_data = datasets.ImageFolder(root = 'food_stitched_55k', transform = transf
 
 num_workers = 0
 # how many samples per batch to load
-batch_size = 20
+batch_size = 32
 
 # prepare data loaders
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, num_workers=num_workers)
@@ -404,7 +404,7 @@ model.cuda()
 
 # specify loss function
 #optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.0005, momentum=0.99)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.00025, momentum=0.99)
 
 
 # number of epochs to train the model
