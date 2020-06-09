@@ -87,14 +87,44 @@ class TripletNetwork(nn.Module):
         
         self.pool = nn.MaxPool2d(2, 2)
         self.actvn = nn.PReLU()
+        self.actvn2 = nn.Sigmoid()
         
     def forward(self, x):
         ## encode ##
         # add hidden layers with relu activation function
         # and maxpooling after
-        l = x[:,:,:,:128]
-        m = x[:,:,:,128:256]
-        r = x[:,:,:,256:]
+        def crop_horizontal_flip(im):
+
+            im = im.cpu().numpy().copy()
+            crop_size = 128
+            start_j = random.randint(0,150-1-crop_size)
+            start_i = random.randint(0,150-1-crop_size)
+            end_j = start_j + crop_size
+            end_i = start_i + crop_size
+            im = im[:,:, start_j:end_j, start_i:end_i].copy()
+
+            a = random.random()
+
+            if a < 0.5:
+                #im = im.cpu().numpy()[:,:, :, ::-1].copy()
+                im = im[:,:, :, ::-1].copy()
+            
+            im = torch.from_numpy(im).to('cuda')    
+
+            return im
+
+        l = x[:,:,:,:150]
+        m = x[:,:,:,150:300]
+        r = x[:,:,:,300:]        
+
+        l = crop_horizontal_flip(l)
+        m = crop_horizontal_flip(m)
+        r = crop_horizontal_flip(r)
+        
+        
+        #l = x[:,:,:,:128]
+        #m = x[:,:,:,128:256]
+        #r = x[:,:,:,256:]
         
         l = self.actvn(self.conv1(l))
         l = self.pool(l)
@@ -102,13 +132,13 @@ class TripletNetwork(nn.Module):
         l = self.pool(l)
         l = self.actvn(self.conv3(l))
         l = self.convB(l)
-        
+                
         m = self.actvn(self.conv1(m))
         m = self.pool(m)
         m = self.actvn(self.conv2(m))
         m = self.pool(m)
         m = self.actvn(self.conv3(m))
-        m = self.convB(m)
+        m = self.convB(m) 
         
         r = self.actvn(self.conv1(r))
         r = self.pool(r)
@@ -120,6 +150,10 @@ class TripletNetwork(nn.Module):
         l = torch.flatten(l, start_dim=1)
         m = torch.flatten(m, start_dim=1)
         r = torch.flatten(r, start_dim=1)
+        
+        l = self.actvn2(l)
+        m = self.actvn2(m)
+        r = self.actvn2(r)
 
         return l, m, r
 
@@ -361,15 +395,17 @@ class TripletAlexNet2(nn.Module):
         return L, M, R    
     
 # Initialize model    
-#model = TripletNetwork()
+model = TripletNetwork()
 #model = TripletAlexNet()
 #model = TripletAlexNet2()
-model = UNet()
+#model = UNet()
 
 model.cuda()
 
 # specify loss function
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
+#optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.99)
+
 
 # number of epochs to train the model
 n_epochs = 10000
@@ -414,7 +450,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_unet2/unet2_reg01.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/sgd_simple/sgd_simple.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -426,6 +462,6 @@ for epoch in range(1, n_epochs+1):
     print('Saving model')
     
     if ep%5 == 0:
-        torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/out_unet2/unet2__reg01_epoch{}.pt".format(ep))
+        torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/sgd_simple/sgd_simple_epoch{}.pt".format(ep))
     
     ep = ep + 1
