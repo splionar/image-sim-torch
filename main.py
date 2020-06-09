@@ -404,7 +404,7 @@ model.cuda()
 
 # specify loss function
 #optimizer = torch.optim.Adam(model.parameters(), lr=0.0005, weight_decay=0.001)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.00025, momentum=0.99)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.99)
 
 
 # number of epochs to train the model
@@ -430,7 +430,7 @@ for epoch in range(1, n_epochs+1):
         l, m, r = model(images)
 
         # loss
-        triplet_loss = nn.TripletMarginLoss(margin=0.8, p=2)
+        triplet_loss = nn.TripletMarginLoss(margin=0.5, p=2)
         loss = triplet_loss(l,m,r)
         #l2_plus = torch.mean(torch.square(l-m),dim=1) # size = batch_size,
         #l2_min = torch.mean(torch.square(l-r),dim=1) # size = batch_size,
@@ -450,7 +450,7 @@ for epoch in range(1, n_epochs+1):
 
         if it%1000 == 0:
             #print('Saving model')
-            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/sgd_simple/sgd_simple.pt")
+            torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/sgd_simple/sgd_simple_margin5.pt")
           
     # print avg training statistics 
     train_loss = train_loss/len(train_loader)
@@ -462,6 +462,6 @@ for epoch in range(1, n_epochs+1):
     print('Saving model')
     
     if ep%5 == 0:
-        torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/sgd_simple/sgd_simple_epoch{}.pt".format(ep))
+        torch.save(model.state_dict(), "/content/drive/My Drive/IML/task4/sgd_simple/sgd_simple_margin5_epoch{}.pt".format(ep))
     
     ep = ep + 1
