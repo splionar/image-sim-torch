@@ -87,7 +87,7 @@ class TripletNetwork(nn.Module):
         
         self.pool = nn.MaxPool2d(2, 2)
         self.actvn = nn.PReLU()
-        self.actvn2 = nn.Sigmoid()
+        #self.actvn2 = nn.Sigmoid()
         
     def forward(self, x):
         ## encode ##
@@ -151,9 +151,9 @@ class TripletNetwork(nn.Module):
         m = torch.flatten(m, start_dim=1)
         r = torch.flatten(r, start_dim=1)
         
-        l = self.actvn2(l)
-        m = self.actvn2(m)
-        r = self.actvn2(r)
+        #l = self.actvn2(l)
+        #m = self.actvn2(m)
+        #r = self.actvn2(r)
 
         return l, m, r
 
